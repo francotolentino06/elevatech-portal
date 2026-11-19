@@ -1,0 +1,78 @@
+<div class="tarjeta panel-filtros cabecera-listado">
+  <label class="campo" for="estado-inspecciones">
+    Estado general
+    <select id="estado-inspecciones" #selector class="control" (change)="cambiarEstado(selector.value)" data-testid="inspecciones-filtro-estado">
+      @for (opcion of opciones; track opcion) {
+        <option [value]="opcion" [selected]="opcion === estado()">{{ opcion }}</option>
+      }
+    </select>
+  </label>
+
+  <button type="button" class="btn btn-secundario" (click)="exportarCSV()">Exportar CSV</button>
+</div>
+
+@if (errorCarga(); as mensaje) {
+  <app-error-conexion [mensaje]="mensaje" (reintentar)="cargar()" />
+} @else if (!cargando() && inspecciones().length === 0) {
+  <div class="tarjeta estado-vacio" data-testid="inspecciones-vacio">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4h6v3H9zM9 12h6M9 16h4" />
+    </svg>
+    <p>Aún no hay inspecciones</p>
+  </div>
+} @else {
+  <div class="tarjeta tabla-contenedor">
+    <table class="tabla tabla-adaptable" role="table" data-testid="inspecciones-tabla">
+      <thead>
+        <tr>
+          <th scope="col">Fecha</th>
+          <th scope="col">Cliente</th>
+          <th scope="col">Equipo</th>
+          <th scope="col">Técnico</th>
+          <th scope="col">Estado general</th>
+        </tr>
+      </thead>
+      @if (cargando()) {
+        <tbody app-filas-esqueleto [filas]="5" [columnas]="5"></tbody>
+      } @else {
+        <tbody>
+          @for (inspeccion of paginadas(); track inspeccion.idInspeccion) {
+            <tr class="fila-enlace" (click)="abrir(inspeccion.idInspeccion)" data-testid="inspecciones-fila">
+              <td data-etiqueta="Fecha"><button type="button" class="enlace-registro" (click)="$event.stopPropagation(); abrir(inspeccion.idInspeccion)" [attr.aria-label]="'Ver inspección ' + inspeccion.idInspeccion">{{ inspeccion.fechaHoraReal | fechaHora }}</button></td>
+              <td data-etiqueta="Cliente">{{ inspeccion.cliente }}</td>
+              <td data-etiqueta="Equipo">{{ inspeccion.equipoTipo }} · {{ inspeccion.equipoCodigo }}</td>
+              <td data-etiqueta="Técnico">{{ inspeccion.tecnico }}</td>
+              <td data-etiqueta="Estado general"><app-badge [texto]="inspeccion.estadoGeneral" /></td>
+            </tr>
+          }
+        </tbody>
+      }
+    </table>
+
+    <!-- Controles de Paginación -->
+    <div class="paginacion">
+      <div class="paginacion-grupo">
+        <span>Mostrar:</span>
+        <select class="control" aria-label="Registros por página" (change)="cambiarRegistrosPorPagina($event)" style="width: 80px; padding: 4px 8px;">
+          <option value="10" [selected]="registrosPorPagina() === 10">10</option>
+          <option value="25" [selected]="registrosPorPagina() === 25">25</option>
+          <option value="50" [selected]="registrosPorPagina() === 50">50</option>
+        </select>
+        <span>registros por página</span>
+      </div>
+
+      <div class="paginacion-grupo">
+        <span>Página {{ paginaActual() }} de {{ totalPaginas() }}</span>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn btn-secundario btn-pequeno" [disabled]="paginaActual() === 1" (click)="cambiarPagina(paginaActual() - 1)">
+            Anterior
+          </button>
+          <button type="button" class="btn btn-secundario btn-pequeno" [disabled]="paginaActual() === totalPaginas()" (click)="cambiarPagina(paginaActual() + 1)">
+            Siguiente
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
